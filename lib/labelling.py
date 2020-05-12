@@ -301,6 +301,7 @@ class image_segmenter:
                 self.next_button.disabled=False
             
     def new_image(self, img_idx):
+        self.indices=None
         self.img = io.imread(self.image_paths[img_idx])
         self.img_idx = img_idx
         img_path = self.image_paths[self.img_idx]
