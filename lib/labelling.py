@@ -314,6 +314,10 @@ class image_segmenter:
             xv, yv = np.meshgrid(pix_y,pix_x)
             self.pix = np.vstack( (xv.flatten(), yv.flatten()) ).T
             self.displayed = self.ax.imshow(self.img)
+            #ensure that the _nav_stack is empty
+            self.fig.canvas.toolbar._nav_stack.clear()
+            #add the initial view to the stack so that the home button works.
+            self.fig.canvas.toolbar.push_current()
             if os.path.exists(self.mask_path):
                 self.class_mask = io.imread(self.mask_path)
             else:
@@ -325,11 +329,9 @@ class image_segmenter:
                 # should probs check that the first two dimensions are the same as the img
             else:
                 self.class_mask[:,:] = 0
+            self.fig.canvas.toolbar.home()
         self.updateArray()
-        #ensure that the _nav_stack is empty
-        self.fig.canvas.toolbar._nav_stack.clear()
-        #add the initial view to the stack so that the home button works.
-        self.fig.canvas.toolbar.push_current()
+
         
 
     def _release(self, event):
