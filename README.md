@@ -9,3 +9,15 @@ if module_path not in sys.path:
 ```
 
 Then you can do `from lib.____ import ____`
+
+
+## Dependencies
+For jupyter notebook interactions you need `nodejs`, `ipympl`, and `jupyterlab-sidecar`
+
+For installing
+```bash
+conda install -c conda-forge nodejs ipympl -y
+pip install sidecar
+jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build
+jupyter labextension install @jupyter-widgets/jupyterlab-sidecar jupyter-matplotlib
+```
