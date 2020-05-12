@@ -4,6 +4,7 @@ from skimage.segmentation import flood
 import os
 from skimage import io
 import ipywidgets as widgets
+import glob
 
 __all__ = [
     'zoom_factory',
@@ -94,10 +95,13 @@ class panhandler:
     """
     def __init__(self, figure):
         self.figure = figure
+        self._id_drag = None
 
     def _cancel_action(self):
         self._xypress = []
-        self.figure.canvas.mpl_disconnect(self._id_drag)
+        if self._id_drag:
+            self.figure.canvas.mpl_disconnect(self._id_drag)
+            self._id_drag = None
         
     def press(self, event):
         if event.button == 1:
@@ -145,7 +149,7 @@ VALID_IMAGE_TYPES = ['jpeg', 'png', 'bmp', 'gif', 'jpg'] # same as supported by 
 
 
 class image_segmenter:
-    def __init__(self, img_dir, classes, overlay_alpha=.5,figsize=(10,10)):
+    def __init__(self, img_dir, classes, overlay_alpha=.5,figsize=(10,10), scroll_to_zoom=True, zoom_scale=1.1):
         """
         TODO allow for intializing with a shape instead of an image
         
@@ -155,15 +159,16 @@ class image_segmenter:
             Number of classes or a list of class names
         ensure_rgba : boolean
             whether to force the displayed image to have an alpha channel to enable transparent overlay
+        zoom_scale : float or None
+            How much to scale the image per scroll. If you do this I recommend using jupyterlab-sidecar in order
+            to prevent the page from scrolling. or checking in on: https://github.com/matplotlib/ipympl/issues/222
+            To disable zoom set this to None.
         """
-#         if not os.path.exists(img_dir):
-#             raise ValueError(f"{img_dir} is not a valid file path")
-        
-#         self.img_dir = img_dir
-#         self.img_files = 
+
         self.img_dir = img_dir
         if not os.path.isdir(self.img_dir):
             raise ValueError(f"{img_dir} is not a folder")
+
         #ensure that there is a sibling directory named masks
         self.mask_dir = os.path.abspath(img_dir).rsplit('/', 1)[0] + '/masks'
         if not os.path.exists(self.mask_dir):
@@ -172,10 +177,8 @@ class image_segmenter:
             raise ValueError(f'{self.mask_dir} already exists and is not a folder')
 
         self.image_paths = []
-#         self.mask_paths = []
         for type_ in VALID_IMAGE_TYPES:
             self.image_paths += (glob.glob(self.img_dir.rstrip('/')+f'/*.{type_}'))
-#             self.mask_paths += glob.glob(self.mask_dir+f'/*.{type_}')
         self.shape = None        
         
         plt.ioff() # see https://github.com/matplotlib/matplotlib/issues/17013
@@ -187,8 +190,6 @@ class image_segmenter:
         self.fig.canvas.mpl_connect('button_press_event', self.onclick)
         self.fig.canvas.mpl_connect('button_release_event', self._release)
         self.panhandler = panhandler(self.fig)
-        
-        self.new_image(0)
 
         # setup lasso stuff
         
@@ -204,7 +205,7 @@ class image_segmenter:
         else:
             raise ValueError(f'Currently only up to 20 classes are supported, you tried to use {len(classes)} classes')
         
-        self.colors = plt.get_cmap(self.colors)(np.arange(len(classes)))[:,:3]
+        self.colors = np.vstack([[0,0,0],plt.get_cmap(self.colors)(np.arange(len(classes)))[:,:3]])
         
         self.class_dropdown = widgets.Dropdown(
                 options=[(str(classes[i]), i) for i in range(len(classes))],
@@ -238,7 +239,26 @@ class image_segmenter:
             button_style='', # 'success', 'info', 'warning', 'danger' or ''
             icon='refresh', # (FontAwesome names without the `fa-` prefix)
         )
+        self.save_button = widgets.Button(
+            description='save mask',
+            button_style='',
+            icon='floppy-o'
+        )
+        self.next_button = widgets.Button(
+            description='next image',
+            button_style='',
+            icon='arrow-right'
+        )
+        self.prev_button = widgets.Button(
+            description='previous image',
+            button_style='',
+            icon='arrow-left',
+            disabled=True
+        )
         self.reset_button.on_click(self.reset)
+        self.save_button.on_click(self.save_mask)
+        self.next_button.on_click(self._change_image_idx)
+        self.prev_button.on_click(self._change_image_idx)
         def button_click(button):
             if button.description == 'flood fill':
                 self.flood_button.button_style='success'
@@ -252,11 +272,39 @@ class image_segmenter:
         self.lasso_button.on_click(button_click)
         self.flood_button.on_click(button_click)
         self.overlay_alpha = overlay_alpha
+        self.indices = None
+        self.new_image(0)
+        
+        #gotta do this after creating the image, and the image needs to come after all the buttons
+        if zoom_scale is not None:
+            self.disconnect_scroll = zoom_factory(self.ax, base_scale = zoom_scale)
+
+    def _change_image_idx(self, button):
+        if button is self.next_button:
+            if self.img_idx +1 < len(self.image_paths):
+                self.img_idx += 1
+                self.save_mask()
+                self.new_image(self.img_idx)
+                
+                if self.img_idx == len(self.image_paths):
+                    self.next_button.disabled = True
+                self.prev_button.disabled=False
+        elif button is self.prev_button:
+            if self.img_idx>=1:
+                self.img_idx -= 1
+                self.save_mask()
+                self.new_image(self.img_idx)
+                
+                if self.img_idx == 0:
+                    self.prev_button.disabled=True
+                
+                self.next_button.disabled=False
+            
     def new_image(self, img_idx):
         self.img = io.imread(self.image_paths[img_idx])
         self.img_idx = img_idx
         img_path = self.image_paths[self.img_idx]
-        
+        self.ax.set_title(os.path.basename(img_path))
         self.mask_path = self.mask_dir + f'/{os.path.basename(img_path)}'
         
         if self.img.shape != self.shape:
@@ -269,15 +317,15 @@ class image_segmenter:
             if os.path.exists(self.mask_path):
                 self.class_mask = io.imread(self.mask_path)
             else:
-                self.class_mask = -np.ones([self.shape[0],self.shape[1]],dtype=np.uint8)
+                self.class_mask = np.zeros([self.shape[0],self.shape[1]],dtype=np.uint8)
         else:
             self.displayed.set_data(self.img)
             if os.path.exists(self.mask_path):
                 self.class_mask = io.imread(self.mask_path)
                 # should probs check that the first two dimensions are the same as the img
             else:
-                self.class_mask[:,:] = -1
-
+                self.class_mask[:,:] = 0
+        self.updateArray()
         #ensure that the _nav_stack is empty
         self.fig.canvas.toolbar._nav_stack.clear()
         #add the initial view to the stack so that the home button works.
@@ -285,8 +333,7 @@ class image_segmenter:
         
 
     def _release(self, event):
-        with out:
-            self.panhandler.release(event)
+        self.panhandler.release(event)
 
     def reset(self,*args):
         self.displayed.set_data(self.img)
@@ -299,28 +346,31 @@ class image_segmenter:
         """
         if event.button == 1:
             if event.xdata is not None and not self.lasso.active:
-                with out:
-                    # transpose x and y bc imshow transposes
-                    self.indices = flood(self.class_mask,(np.int(event.ydata), np.int(event.xdata)))
-                    self.updateArray()
+                # transpose x and y bc imshow transposes
+                self.indices = flood(self.class_mask,(np.int(event.ydata), np.int(event.xdata)))
+                self.updateArray()
         elif event.button == 3:
-            with out:
-                self.panhandler.press(event)
+            self.panhandler.press(event)
 
     def updateArray(self):
-        with out:
-            array = self.displayed.get_array().data
-            
-            if self.erase_check_box.value:
-                self.class_mask[self.indices] = -1
+        array = self.displayed.get_array().data
+
+        if self.erase_check_box.value:
+            if self.indices is not None:
+                self.class_mask[self.indices] = 0
                 array[self.indices] = self.img[self.indices]
-            else:
-                self.class_mask[self.indices] = self.class_dropdown.value
-                # https://en.wikipedia.org/wiki/Alpha_compositing#Straight_versus_premultiplied           
-                c_overlay = self.colors[self.class_dropdown.value]*255*self.overlay_alpha
-                array[self.indices] = c_overlay + self.img[self.indices]*(1-self.overlay_alpha)
-            self.displayed.set_data(array)
-        self.ax.set_title(np.sum(array==1.1))
+        elif self.indices is not None:
+            self.class_mask[self.indices] = self.class_dropdown.value + 1
+            # https://en.wikipedia.org/wiki/Alpha_compositing#Straight_versus_premultiplied           
+            c_overlay = self.colors[self.class_mask[self.indices]]*255*self.overlay_alpha
+            array[self.indices] = (c_overlay + self.img[self.indices]*(1-self.overlay_alpha))
+        else:
+            # new image and we found a class mask
+            # so redraw entire array where class != 0
+            idx = self.class_mask != 0
+            c_overlay = self.colors[self.class_mask[idx]]*255*self.overlay_alpha
+            array[idx] = (c_overlay + self.img[idx]*(1-self.overlay_alpha))
+        self.displayed.set_data(array)
         
     def onselect(self,verts):
         self.verts = verts
@@ -334,9 +384,18 @@ class image_segmenter:
     def render(self):
         layers = [widgets.HBox([self.lasso_button, self.flood_button])]
         layers.append(widgets.HBox([self.reset_button, self.class_dropdown,self.erase_check_box]))
-        layers.append(self.fig.canvas)    
+        layers.append(self.fig.canvas)   
+        layers.append(widgets.HBox([self.save_button, self.prev_button, self.next_button]))
         return widgets.VBox(layers)
-    def save_mask(self):
-        io.imsave(self.mask_path, self.class_mask)
+    def save_mask(self, save_if_no_nonzero=False):
+        """
+        save_if_no_nonzero : boolean
+            Whether to save if class_mask only contains 0s
+        """
+        if (save_if_no_nonzero or np.any(self.class_mask != 0)):
+            if os.path.splitext(self.mask_path)[1] in ['jpg', 'jpeg']:
+                io.imsave(self.mask_path, self.class_mask,check_contrast =False,quality=100)
+            else:
+                io.imsave(self.mask_path, self.class_mask,check_contrast =False)
     def _ipython_display_(self):
         display(self.render())
