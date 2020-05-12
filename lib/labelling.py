@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from skimage.segmentation import flood
+import os
+from skimage import io
+import ipywidgets as widgets
 
 __all__ = [
     'zoom_factory',
     'panhandler',
-    'single_image_segmenter'
+    'image_segmenter'
 ]
 def zoom_factory(ax,base_scale = 1.1):
     """
@@ -115,10 +119,7 @@ class panhandler:
                 self._id_drag = self.figure.canvas.mpl_connect(
                     'motion_notify_event', self._mouse_move)
     def release(self, event):
-        if self._button_pressed is None:
-            self._cancel_action()
-            return
-
+        self._cancel_action()
         self.figure.canvas.mpl_disconnect(self._id_drag)
 
 
@@ -133,16 +134,18 @@ class panhandler:
         for a, _ind in self._xypress:
             # safer to use the recorded button at the _press than current
             # button: # multiple button can get pressed during motion...
-            a.drag_pan(self._button_pressed, event.key, event.x, event.y)
+            a.drag_pan(1, event.key, event.x, event.y)
         self.figure.canvas.draw_idle()
 from matplotlib.widgets import LassoSelector
 from matplotlib.path import Path
 
 
+VALID_IMAGE_TYPES = ['jpeg', 'png', 'bmp', 'gif', 'jpg'] # same as supported by keras
 
 
-class single_image_segmenter:
-    def __init__(self, img, classes, overlay_alpha=.5,figsize=(10,10)):
+
+class image_segmenter:
+    def __init__(self, img_dir, classes, overlay_alpha=.5,figsize=(10,10)):
         """
         TODO allow for intializing with a shape instead of an image
         
@@ -153,6 +156,28 @@ class single_image_segmenter:
         ensure_rgba : boolean
             whether to force the displayed image to have an alpha channel to enable transparent overlay
         """
+#         if not os.path.exists(img_dir):
+#             raise ValueError(f"{img_dir} is not a valid file path")
+        
+#         self.img_dir = img_dir
+#         self.img_files = 
+        self.img_dir = img_dir
+        if not os.path.isdir(self.img_dir):
+            raise ValueError(f"{img_dir} is not a folder")
+        #ensure that there is a sibling directory named masks
+        self.mask_dir = os.path.abspath(img_dir).rsplit('/', 1)[0] + '/masks'
+        if not os.path.exists(self.mask_dir):
+            os.mkdir(self.mask_dir)
+        elif not os.path.isdir(self.mask_dir):
+            raise ValueError(f'{self.mask_dir} already exists and is not a folder')
+
+        self.image_paths = []
+#         self.mask_paths = []
+        for type_ in VALID_IMAGE_TYPES:
+            self.image_paths += (glob.glob(self.img_dir.rstrip('/')+f'/*.{type_}'))
+#             self.mask_paths += glob.glob(self.mask_dir+f'/*.{type_}')
+        self.shape = None        
+        
         plt.ioff() # see https://github.com/matplotlib/matplotlib/issues/17013
         self.fig = plt.figure(figsize=figsize)
         self.ax = self.fig.gca()
@@ -163,13 +188,9 @@ class single_image_segmenter:
         self.fig.canvas.mpl_connect('button_release_event', self._release)
         self.panhandler = panhandler(self.fig)
         
+        self.new_image(0)
+
         # setup lasso stuff
-        
-        self.shape = None
-
-
-        self.new_image(img)
-
         
 
         plt.ion()
@@ -231,20 +252,32 @@ class single_image_segmenter:
         self.lasso_button.on_click(button_click)
         self.flood_button.on_click(button_click)
         self.overlay_alpha = overlay_alpha
-    def new_image(self, img):
-        self.img = img
-        if img.shape != self.shape:
-            self.shape = img.shape
+    def new_image(self, img_idx):
+        self.img = io.imread(self.image_paths[img_idx])
+        self.img_idx = img_idx
+        img_path = self.image_paths[self.img_idx]
+        
+        self.mask_path = self.mask_dir + f'/{os.path.basename(img_path)}'
+        
+        if self.img.shape != self.shape:
+            self.shape = self.img.shape
             pix_x = np.arange(self.shape[0])
             pix_y = np.arange(self.shape[1])
             xv, yv = np.meshgrid(pix_y,pix_x)
             self.pix = np.vstack( (xv.flatten(), yv.flatten()) ).T
             self.displayed = self.ax.imshow(self.img)
-            self.class_mask = -np.ones([self.shape[0],self.shape[1]],dtype=np.int)
+            if os.path.exists(self.mask_path):
+                self.class_mask = io.imread(self.mask_path)
+            else:
+                self.class_mask = -np.ones([self.shape[0],self.shape[1]],dtype=np.uint8)
         else:
             self.displayed.set_data(self.img)
-            self.class_mask[:,:] = -1
-            
+            if os.path.exists(self.mask_path):
+                self.class_mask = io.imread(self.mask_path)
+                # should probs check that the first two dimensions are the same as the img
+            else:
+                self.class_mask[:,:] = -1
+
         #ensure that the _nav_stack is empty
         self.fig.canvas.toolbar._nav_stack.clear()
         #add the initial view to the stack so that the home button works.
@@ -252,7 +285,8 @@ class single_image_segmenter:
         
 
     def _release(self, event):
-        self.panhandler.release(event)
+        with out:
+            self.panhandler.release(event)
 
     def reset(self,*args):
         self.displayed.set_data(self.img)
@@ -270,7 +304,8 @@ class single_image_segmenter:
                     self.indices = flood(self.class_mask,(np.int(event.ydata), np.int(event.xdata)))
                     self.updateArray()
         elif event.button == 3:
-            self.panhandler.press(event)
+            with out:
+                self.panhandler.press(event)
 
     def updateArray(self):
         with out:
@@ -301,6 +336,7 @@ class single_image_segmenter:
         layers.append(widgets.HBox([self.reset_button, self.class_dropdown,self.erase_check_box]))
         layers.append(self.fig.canvas)    
         return widgets.VBox(layers)
-    
+    def save_mask(self):
+        io.imsave(self.mask_path, self.class_mask)
     def _ipython_display_(self):
         display(self.render())
