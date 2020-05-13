@@ -185,7 +185,7 @@ class image_segmenter:
         self.fig = plt.figure(figsize=figsize)
         self.ax = self.fig.gca()
         lineprops = {'color': 'black', 'linewidth': 1, 'alpha': 0.8}
-        self.lasso = LassoSelector(self.ax, self.onselect,lineprops=lineprops, button=1)
+        self.lasso = LassoSelector(self.ax, self.onselect,lineprops=lineprops, button=1,useblit=False)
         self.lasso.set_visible(True)
         self.fig.canvas.mpl_connect('button_press_event', self.onclick)
         self.fig.canvas.mpl_connect('button_release_event', self._release)
