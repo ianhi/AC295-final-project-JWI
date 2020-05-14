@@ -43,13 +43,13 @@ Follow: https://ropenscilabs.github.io/r-docker-tutorial/04-Dockerhub.html
 
 **build**
 ```bash
-sudo docker build -t ianhuntisaak/ac295-final-project:<tag>
+sudo docker build -t ianhuntisaak/ac295-final-project:<tag> .
 ```
 
 **Verify that it works**
 If you use a port other than 8888, e.g. `-p 8889:8888` then you need to change the port in the URL printed in the terminal, can't just copy paste.
 ```bash
-sudo docker run -p 8888:8888 -e JUPYTER_ENABLE_LAB=yes ianhuntisaak/ac295-final-project:v2
+sudo docker run -p 8888:8888 -e JUPYTER_ENABLE_LAB=yes ianhuntisaak/ac295-final-project:<tag>
 ```
 
 **push to dockerhub**
