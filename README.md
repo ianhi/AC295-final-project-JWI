@@ -7,7 +7,7 @@ Unfortunately it's a bit weak of an environment for this application so I'd reco
 
 **docker**
 ```
-sudo docker run -p 8888:8888 -e JUPYTER_ENABLE_LAB ianhuntisaak/ac295-final-project:v2
+sudo docker run -p 8888:8888 -e JUPYTER_ENABLE_LAB=yes ianhuntisaak/ac295-final-project:v2
 ```
 
 ## Import structure
