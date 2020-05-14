@@ -174,7 +174,7 @@ class image_segmenter:
             raise ValueError(f"{self.img_dir} must exist and contain the the folder 'train'")
         self.img_dir = path.join(self.img_dir, 'train')
         #ensure that there is a sibling directory named masks
-        self.mask_dir = path.join(self.img_dir.rsplit('images/',1)[0], 'masks/train')
+        self.mask_dir = path.join(self.img_dir.rsplit('train_imgs/',1)[0], 'train_masks/train')
 #         self.mask_dir = path.join(self.img_dir.rslit(, 'masks/train/')
         if not os.path.isdir(self.mask_dir):
             os.makedirs(self.mask_dir)
