@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage.segmentation import flood
+from os import path
 import os
 from skimage import io
 import ipywidgets as widgets
 import glob
+from matplotlib.widgets import LassoSelector
+from matplotlib.path import Path
 
 __all__ = [
     'zoom_factory',
@@ -140,8 +143,6 @@ class panhandler:
             # button: # multiple button can get pressed during motion...
             a.drag_pan(1, event.key, event.x, event.y)
         self.figure.canvas.draw_idle()
-from matplotlib.widgets import LassoSelector
-from matplotlib.path import Path
 
 
 VALID_IMAGE_TYPES = ['jpeg', 'png', 'bmp', 'gif', 'jpg'] # same as supported by keras
@@ -155,6 +156,8 @@ class image_segmenter:
         
         parameters
         ----------
+        img_dir : string
+            path to directory 'images' that contains 'train/' and images are in 'train/'
         classes : Int or list
             Number of classes or a list of class names
         ensure_rgba : boolean
@@ -166,15 +169,16 @@ class image_segmenter:
         """
 
         self.img_dir = img_dir
-        if not os.path.isdir(self.img_dir):
-            raise ValueError(f"{img_dir} is not a folder")
 
+        if not path.isdir(path.join(self.img_dir, 'train')):
+            raise ValueError(f"{self.img_dir} must exist and contain the the folder 'train'")
+        self.img_dir = path.join(self.img_dir, 'train')
         #ensure that there is a sibling directory named masks
-        self.mask_dir = os.path.abspath(img_dir).rsplit('/', 1)[0] + '/masks'
-        if not os.path.exists(self.mask_dir):
-            os.mkdir(self.mask_dir)
-        elif not os.path.isdir(self.mask_dir):
-            raise ValueError(f'{self.mask_dir} already exists and is not a folder')
+        self.mask_dir = path.join(self.img_dir, 'masks/train')
+        if not os.path.isdir(self.mask_dir):
+            os.makedirs(self.mask_dir)
+#         elif not os.path.isdir(self.mask_dir):
+#             raise ValueError(f'{self.mask_dir} already exists and is not a folder')
 
         self.image_paths = []
         for type_ in VALID_IMAGE_TYPES:
