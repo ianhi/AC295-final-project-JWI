@@ -1,7 +1,7 @@
 # Trying it out
 
 **Binder**  
-Binder is a website that will setup an computational environment for you on their serves: [![Binder](https://mybinder.org/badge_logo.svg)](https://gesis.mybinder.org/binder/v2/gh/ianhi/AC295-final-project-JWI/36c01aa3555e690e479fa84354205e268a78ef95?urlpath=lab)
+Binder is a website that will setup an computational environment for you on their serves: [![Binder](https://mybinder.org/badge_logo.svg)](https://gesis.mybinder.org/binder/v2/gh/ianhi/AC295-final-project-JWI/master?urlpath=lab)
 
 Unfortunately it's a bit weak of an environment for this application so I'd recommend using docker instead:
 
