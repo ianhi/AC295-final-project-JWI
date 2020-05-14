@@ -3,7 +3,7 @@
 ARG BASE_CONTAINER=jupyter/tensorflow-notebook
 FROM $BASE_CONTAINER
 
-RUN pip install sidecar
+RUN pip install sidecar albumentations
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-sidecar
 COPY . .
 RUN rm -r work
