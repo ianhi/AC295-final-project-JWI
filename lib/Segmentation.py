@@ -1,4 +1,4 @@
-import segmentation_models as sm 
+import segmentation_models as sm #1.1
 #@misc{Yakubovskiy:2019,
 #  Author = {Pavel Yakubovskiy},
 #  Title = {Segmentation Models},
@@ -10,7 +10,7 @@ import segmentation_models as sm
 
 
 import albumentations as A
-import tensorflow as tf
+import tensorflow as tf #2.2
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -263,13 +263,46 @@ class segmentation:
     plt.ylim([0, 1])
     plt.legend()
     plt.show()
+def plot_history(self):
+    
+  fig,ax=plt.subplots(1,3,figsize=(20,5))
+  epochs = range(self.n_epochs)
+
+  loss = self.model_history.history['loss']
+  val_loss = self.model_history.history['val_loss']
+  
+  ax[0].plot(epochs, loss, 'r', label='Training loss')
+  ax[0].plot(epochs, val_loss, 'bo', label='Validation loss')
+  ax[0].set_title('Training and Validation Loss')
+  ax[0].set_ylabel('Loss Value')
+
+  accuracy = self.model_history.history['accuracy']
+  val_accuracy = self.model_history.history['val_accuracy']
+  ax[1].plot(epochs, accuracy, 'r', label='Training Iou Score')
+  ax[1].plot(epochs, val_accuracy, 'bo', label='Validation Iou Score')
+  ax[1].set_title('Training and Validation Accuracy')
+  ax[1].set_ylabel('Accuracy Score')
+  ax[1].set_ylim(0,1)
+  
+  iou_score = self.model_history.history['iou_score']
+  val_iou_score = self.model_history.history['val_iou_score']
+  ax[2].plot(epochs, iou_score, 'r', label='Training Iou Score')
+  ax[2].plot(epochs, val_iou_score, 'bo', label='Validation Iou Score')
+  ax[2].set_title('Training and Validation IOU Score')
+  ax[2].set_ylabel('IOU Score')    
+  ax[2].set_ylim(0,1)
+  
+  for i in range(3):
+      ax[i].set_xlabel('Epoch')
+      ax[i].legend();
+  plt.show()
+
 
 
   def find_loss(self):
     loss_answer=self.get_good_answer("\n Which loss function do you want to use ? \n -'cross_entropy': fastest to compute, \n -'dice_loss': Overlap measure that performs better at class imbalanced problems \n -'focal_loss' : To down-weight the contribution of easy examples so that the CNN focuses more on hard examples \n Could also be a mix of those loss functions \n Examples : \n - cross_entropy + dice_loss \n - dice_loss + focal_loss \n ", acceptable_answers=['cross_entropy','dice_loss','focal_loss','cross_entropy + dice_loss','cross_entropy + focal_loss','dice_loss + focal_loss','cross_entropy + dice_loss + focal_loss'])
-    loss=0
     if '+' in loss_answer :
-        weights=self.get_good_answer(" \n Because you chose multiple loss function, set the weights given to the different loss_functions separated by space : \n Examples : if 'dice_loss + focal_loss' was given, answers could be '1 1' or '2 1' \n", acceptable_answers=None)
+        weights=self.get_good_answer(" \n Because you chose multiple loss functions, set the weights given to the different loss_functions separated by space : \n Examples : if 'dice_loss + focal_loss' was given, answers could be '1 1' or '2 1' \n", acceptable_answers=None)
         weights = weights.split()
         weights=[float(i) for i in weights]
     else :
