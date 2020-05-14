@@ -34,6 +34,7 @@ class segmentation:
       (WxH) Images will be resized to this. Each dimension should be divisible by
       32 for best results.
     """
+    seg.PATH=PATh
     self.classes=CLASSES
     self.n_classes = len(CLASSES)
     self.activation = 'sigmoid' if self.n_classes == 1 else 'softmax'
@@ -249,53 +250,40 @@ class segmentation:
 
       answer=self.get_good_answer("\n Do you want to change any other parameters for the new training ? - 'No' \n - 'epochs' \n - 'loss' \n -'batch_size' \n -'encode_freeze",['No','no','epochs','loss','batch_size','encode_freeze'])
     
+
   def plot_history(self):
+      
+    fig,ax=plt.subplots(1,3,figsize=(20,5))
+    epochs = range(self.n_epochs)
+
     loss = self.model_history.history['loss']
     val_loss = self.model_history.history['val_loss']
-    epochs = range(self.n_epochs)
-    plt.figure()
-    plt.plot(epochs, loss, 'r', label='Training loss')
-    if self.has_validation:
-      plt.plot(epochs, val_loss, 'bo', label='Validation loss')
-    plt.title('Training and Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss Value')
-    plt.ylim([0, 1])
-    plt.legend()
-    plt.show()
-def plot_history(self):
     
-  fig,ax=plt.subplots(1,3,figsize=(20,5))
-  epochs = range(self.n_epochs)
+    ax[0].plot(epochs, loss, 'r', label='Training loss')
+    ax[0].plot(epochs, val_loss, 'bo', label='Validation loss')
+    ax[0].set_title('Training and Validation Loss')
+    ax[0].set_ylabel('Loss Value')
 
-  loss = self.model_history.history['loss']
-  val_loss = self.model_history.history['val_loss']
-  
-  ax[0].plot(epochs, loss, 'r', label='Training loss')
-  ax[0].plot(epochs, val_loss, 'bo', label='Validation loss')
-  ax[0].set_title('Training and Validation Loss')
-  ax[0].set_ylabel('Loss Value')
-
-  accuracy = self.model_history.history['accuracy']
-  val_accuracy = self.model_history.history['val_accuracy']
-  ax[1].plot(epochs, accuracy, 'r', label='Training Iou Score')
-  ax[1].plot(epochs, val_accuracy, 'bo', label='Validation Iou Score')
-  ax[1].set_title('Training and Validation Accuracy')
-  ax[1].set_ylabel('Accuracy Score')
-  ax[1].set_ylim(0,1)
-  
-  iou_score = self.model_history.history['iou_score']
-  val_iou_score = self.model_history.history['val_iou_score']
-  ax[2].plot(epochs, iou_score, 'r', label='Training Iou Score')
-  ax[2].plot(epochs, val_iou_score, 'bo', label='Validation Iou Score')
-  ax[2].set_title('Training and Validation IOU Score')
-  ax[2].set_ylabel('IOU Score')    
-  ax[2].set_ylim(0,1)
-  
-  for i in range(3):
-      ax[i].set_xlabel('Epoch')
-      ax[i].legend();
-  plt.show()
+    accuracy = self.model_history.history['accuracy']
+    val_accuracy = self.model_history.history['val_accuracy']
+    ax[1].plot(epochs, accuracy, 'r', label='Training Iou Score')
+    ax[1].plot(epochs, val_accuracy, 'bo', label='Validation Iou Score')
+    ax[1].set_title('Training and Validation Accuracy')
+    ax[1].set_ylabel('Accuracy Score')
+    ax[1].set_ylim(0,1)
+    
+    iou_score = self.model_history.history['iou_score']
+    val_iou_score = self.model_history.history['val_iou_score']
+    ax[2].plot(epochs, iou_score, 'r', label='Training Iou Score')
+    ax[2].plot(epochs, val_iou_score, 'bo', label='Validation Iou Score')
+    ax[2].set_title('Training and Validation IOU Score')
+    ax[2].set_ylabel('IOU Score')    
+    ax[2].set_ylim(0,1)
+    
+    for i in range(3):
+        ax[i].set_xlabel('Epoch')
+        ax[i].legend();
+    plt.show()
 
 
 
@@ -341,7 +329,7 @@ def plot_history(self):
     name_folder=input("Name of folder for that unlabeled data /n  Be sure that folder is contained in the path and the following structure is respected : PATH // <your_folder> //test// your_images.png")
   
     test_datagen= ImageDataGenerator(rescale=1./255)
-    unlabeled_image_generator = test_datagen.flow_from_directory(PATH+name_folder,class_mode=None,batch_size = 1)
+    unlabeled_image_generator = test_datagen.flow_from_directory(seg.PATH+name_folder,class_mode=None,batch_size = 1)
 
     if show_predictions:
       for _ in range(3):
