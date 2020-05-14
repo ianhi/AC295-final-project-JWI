@@ -34,7 +34,7 @@ class segmentation:
       (WxH) Images will be resized to this. Each dimension should be divisible by
       32 for best results.
     """
-    seg.PATH=PATh
+    self.PATH=PATH
     self.classes=CLASSES
     self.n_classes = len(CLASSES)
     self.activation = 'sigmoid' if self.n_classes == 1 else 'softmax'
