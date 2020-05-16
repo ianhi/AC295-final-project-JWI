@@ -1,3 +1,5 @@
+Authors: Jenny Huang, Ian Hunt-Isaak, William Palmer
+
 # Trying it out
 
 **Binder**  
