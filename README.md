@@ -2,18 +2,30 @@ Authors: Jenny Huang, Ian Hunt-Isaak, William Palmer
 
 # Trying it out
 
-**Binder**  
-Binder is a website that will setup an computational environment for you on their serves: [![Binder](https://mybinder.org/badge_logo.svg)](https://gesis.mybinder.org/binder/v2/gh/ianhi/AC295-final-project-JWI/master?urlpath=lab)
-
-Unfortunately it's a bit weak of an environment for this application so I'd recommend using docker instead:
 
 **docker**
+
+From Dockerhub:
 ```
 sudo docker run -p 8888:8888 -e JUPYTER_ENABLE_LAB=yes ianhuntisaak/ac295-final-project:v3
 ```
 
+**Binder**  
+We don't recommend this, everything will be very slow (also it currently fails to build 😢): [![Binder](https://mybinder.org/badge_logo.svg)](https://gesis.mybinder.org/binder/v2/gh/ianhi/AC295-final-project-JWI/master?urlpath=lab) 
+
+
+
+# Installing dependencies
+
+Or you could install it locally. We have a conda environment file in the binder directory. So you can make an environment with the following commands:
+
+```bash
+conda create -n segmentation -f binder/environment.yml -y && conda activate segmentation
+jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build
+jupyter labextension install @jupyter-widgets/jupyterlab-sidecar jupyter-matplotlib
+```
 ## Import structure
-I made separate directories for notebooks and python files becuase otherwise things become a real mess. To import something from a python file in the lib directory put the following at the top of your python notebook:
+There are separate directories for notebooks and python files because otherwise things become a real mess. To import something from a python file in the lib directory put the following at the top of your python notebook:
 ```python
 # set up path for relative imports
 import os
@@ -26,19 +38,7 @@ if module_path not in sys.path:
 Then you can do `from lib.____ import ____`
 
 
-## Dependencies
-For jupyter notebook interactions you need `nodejs`, `ipympl`, and `jupyterlab-sidecar`
-
-For installing
-```bash
-conda install -c conda-forge nodejs ipympl -y
-pip install sidecar
-jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build
-jupyter labextension install @jupyter-widgets/jupyterlab-sidecar jupyter-matplotlib
-```
-
-
-# updating docker image
+# Updating docker image
 
 Follow: https://ropenscilabs.github.io/r-docker-tutorial/04-Dockerhub.html
 
