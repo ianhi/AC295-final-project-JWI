@@ -1,6 +1,6 @@
 Authors: Jenny Huang, Ian Hunt-Isaak, William Palmer
 # Write up
-We wrote a medium article about this! Check it out here: https://medium.com/institute-for-applied-computational-science/how-we-built-an-easy-to-use-image-segmentation-tool-with-transfer-learning-546efb6ae98
+This was our final project for  https://harvard-iacs.github.io/2020-AC295/. We wrote a medium article about this! Check it out here: https://medium.com/institute-for-applied-computational-science/how-we-built-an-easy-to-use-image-segmentation-tool-with-transfer-learning-546efb6ae98
 
 # Trying it out
 
