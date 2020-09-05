@@ -2,6 +2,9 @@ Authors: Jenny Huang, Ian Hunt-Isaak, William Palmer
 # Write up
 This was our final project for  https://harvard-iacs.github.io/2020-AC295/. We wrote a medium article about this! Check it out here: https://medium.com/institute-for-applied-computational-science/how-we-built-an-easy-to-use-image-segmentation-tool-with-transfer-learning-546efb6ae98
 
+## Image segmentation code is now availiable on PyPi!
+The image segmenter in this project is now availiable on pypi via [mpl-interactions](https://github.com/ianhi/mpl-interactions), see documentation [here](https://mpl-interactions.readthedocs.io/en/latest/examples/image-segmentation.html). Also this project inspired [ipysegment](https://github.com/ianhi/ipysegment), an HTML5 canvas based canvas based image segmenter for use in jupyter notebooks. ipysegment will be significantly less laggy to use, but currently has fewer features.
+
 # Trying it out
 
 
